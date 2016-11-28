@@ -22,26 +22,28 @@ public class EmployeeInfoDAOImpl implements EmployeeInfoDAO {
 	private static final String _ID = "_id";
 
 	@Override
-	public boolean updateEmployeeInfo(final Employee emp) {
-
+	public void updateEmployeeInfo(final Employee emp) {
 		final MongoClient mongoClient = getConnection();
-		boolean result = false;
-
+		final MongoCollection<Document> collection = getEmployeeCollection(mongoClient);
+		
 		try {
-			final MongoCollection<Document> collection = getEmployeeCollection(mongoClient);
-
 			if (null != emp && emp.get_id() != null) {
-				final UpdateResult updateMany = collection.updateMany(com.mongodb.client.model.Filters.eq(_ID, emp.get_id()),
-						new Document("$set", createEmployeeDocument(emp)));
-				if (null != updateMany && updateMany.getModifiedCount() > 0) result = true;
+				final ObjectId _id = new ObjectId(emp.get_id());
+				Document createEmployeeDocument = createEmployeeDocument(emp);
+				final UpdateResult updateMany = collection.replaceOne(com.mongodb.client.model.Filters.eq(_ID, _id),createEmployeeDocument);
+				if (null != updateMany && updateMany.getModifiedCount() > 0) {
+					for (Document doc : collection.find()) {
+
+						System.out.println("After update:" + doc.toJson());
+
+					}
+				}
 			}
 		} catch (final Exception exception) {
 			System.out.println("Exception thrown inside updateEmployeeInfo:MongoDBDAOImpl" + exception);
 		} finally {
 			mongoClient.close();
 		}
-
-		return result;
 	}
 
 	private MongoCollection<Document> getEmployeeCollection(final MongoClient mongoClient) {

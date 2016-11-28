@@ -63,35 +63,24 @@ public class EmployeeInfoController {
 	    //-------------------Create a User--------------------------------------------------------
 	     
 	    @RequestMapping(value = "/user/", method = RequestMethod.POST)
-	    public ResponseEntity<Void> createUser(@RequestBody Employee user,    UriComponentsBuilder ucBuilder) {
-	        System.out.println("Creating User " + user.getName());
-	        custService.createNewEmployee(user);
+	    public ResponseEntity<Void> createUser(@RequestBody Employee emp,    UriComponentsBuilder ucBuilder) {
+	        System.out.println("Creating User " + emp.getName());
+	        custService.createNewEmployee(emp);
 	 
 	        HttpHeaders headers = new HttpHeaders();
-	        headers.setLocation(ucBuilder.path("/user/{id}").buildAndExpand(user.get_id()).toUri());
+	        headers.setLocation(ucBuilder.path("/user/{id}").buildAndExpand(emp.get_id()).toUri());
 	        return new ResponseEntity<Void>(headers, HttpStatus.CREATED);
 	    }
 	 
 	    
 	     
 	    //------------------- Update a User --------------------------------------------------------
-	  /*   
-	    @RequestMapping(value = "/user/{id}", method = RequestMethod.PUT)
-	    public ResponseEntity<Employee> updateUser(@PathVariable("id") long id, @RequestBody User user) {
-	        System.out.println("Updating User " + id);
+	     
+	    @RequestMapping(value = "/user/", method = RequestMethod.PUT)
+	    public ResponseEntity<Employee> updateUser(@RequestBody Employee emp) {
+	        System.out.println("Updating User " + emp.get_id());
 	         
-	        User currentUser = custService.findById(id);
-	         
-	        if (currentUser==null) {
-	            System.out.println("User with id " + id + " not found");
-	            return new ResponseEntity<Employee>(HttpStatus.NOT_FOUND);
-	        }
-	 
-	        currentUser.setUsername(user.getUsername());
-	        currentUser.setAddress(user.getAddress());
-	        currentUser.setEmail(user.getEmail());
-	         
-	        custService.updateUser(currentUser);
-	        return new ResponseEntity<Employee>(currentUser, HttpStatus.OK);
-	    }*/
+	        custService.updateEmployeeInfo(emp);
+	        return new ResponseEntity<Employee>(emp, HttpStatus.OK);
+	    }
 }

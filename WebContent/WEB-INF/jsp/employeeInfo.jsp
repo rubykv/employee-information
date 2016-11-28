@@ -9,10 +9,16 @@ var app = angular.module('myApp',[]);
 app.controller('myCtrl', function($scope,CustomerService) {
     var self = this;
     $scope.user={_id:null,name:'',city:'',phoneNumber:''};
+    $scope.editedUser={_id:null,name:'',city:'',phoneNumber:''}
     $scope.users;
     $scope.deleteUser = deleteUser;
     $scope.submit = submit;
+    $scope.cancel = cancel;
     $scope.counter = 0;
+    $scope.editorEnabled = false;
+    $scope.edit = edit;
+    $scope.cancelEdit = cancelEdit;
+    $scope.save=save;
 
     fetchAllUsers();
     
@@ -58,6 +64,40 @@ app.controller('myCtrl', function($scope,CustomerService) {
         $scope.myForm.phoneNumber.$setPristine(); 
 
     }
+    function cancel() {
+        console.log('Cancel User');
+        $scope.add=false;
+        reset();
+	}
+    function edit(id) {
+        $scope.editorEnabled = true;
+
+    	 for(var i = 0; i < $scope.users.length; i++){
+             if($scope.users[i]._id == id) {
+            	 var editUser = angular.copy($scope.users[i]);
+            	 $scope.editedUser.editableId = editUser._id;
+            	 $scope.editedUser.editableTitle= editUser.name;
+            	 $scope.editedUser.editableCity = editUser.city;
+            	 $scope.editedUser.editablephoneNum = editUser.phoneNumber;
+                 break;
+             }
+         }  
+    }
+    function cancelEdit() {
+        $scope.editorEnabled=false;
+	}
+    function save(title,city,email){
+        $scope.editorEnabled=false;
+		$scope.editedUser={_id:$scope.editedUser.editableId,name:title,city:city,phoneNumber:email}
+
+    	CustomerService.updateUser($scope.editedUser)
+            .then(
+            fetchAllUsers,
+            function(errResponse){
+                console.error('Error while updating User');
+            }
+        );
+    }
  });
     
 app.factory('CustomerService',  function($http, $q){
@@ -66,7 +106,8 @@ app.factory('CustomerService',  function($http, $q){
     var factory = {
             fetchAllUsers: fetchAllUsers,
             deleteUser:deleteUser,
-            createUser:createUser
+            createUser:createUser,
+            updateUser:updateUser
     };
     return factory;
     
@@ -112,7 +153,23 @@ app.factory('CustomerService',  function($http, $q){
 	        );
 	        return deferred.promise;
 	}
+	
+	function updateUser(user) {
+        var deferred = $q.defer();
+        $http.put(WEBSERVICE_URI, user)
+            .then(
+            function (response) {
+                deferred.resolve(response.data);
+            },
+            function(errResponse){
+                console.error('Error while creating User');
+                deferred.reject(errResponse);
+            }
+        );
+        return deferred.promise;
+	}
 });
+
 </script>
 
 <head>
@@ -134,7 +191,7 @@ app.factory('CustomerService',  function($http, $q){
 			<div class="panel-heading">
 				<span class="lead">List of Employee </span>
 			</div>
-			<div class="tablecontainer">
+			<div class="tablecontainer" ng-hide="editorEnabled">
 				<table class="table table-hover">
 					<thead>
 						<tr>
@@ -155,8 +212,50 @@ app.factory('CustomerService',  function($http, $q){
 								<button type="button" ng-click="edit(u._id)"
 									class="btn btn-success custom-width">Edit</button>
 								<button type="button" ng-click="deleteUser(u._id)"
-									class="btn btn-danger custom-width">Remove</button>
+									class="btn btn-danger custom-width">Delete</button>
 							</td>
+						</tr>
+					</tbody>
+				</table>
+				 <button type="button" ng-click="add=true"
+									class="btn btn-success custom-width">Add New Employee</button>
+			</div>
+			<div class="tablecontainer" ng-show="editorEnabled">
+			<input type="hidden" ng-model="editableId" />
+				<table class="table table-hover">
+					<thead>
+						<tr>
+							<th>ID.</th>
+							<th>Name</th>
+							<th>City</th>
+							<th>Email</th>
+							<th width="20%"></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="u in users">
+							<td><span>{{$index+1}}</span></td>
+							<td><span ng-if="u._id == editedUser.editableId"><input ng-model="editedUser.editableTitle"></span>
+								<span ng-if="u._id != editedUser.editableId" ng-bind="u.name"></span>
+							</td>
+							<td><span ng-if="u._id == editedUser.editableId"><input ng-model="editedUser.editableCity" ></span>
+								<span ng-if="u._id != editedUser.editableId" ng-bind="u.city"></span>
+							</td>
+							<td><span ng-if="u._id == editedUser.editableId"><input ng-model="editedUser.editablephoneNum"></span>
+								<span ng-if="u._id != editedUser.editableId" ng-bind="u.phoneNumber"></span>
+							</td>
+							<td><span ng-if="u._id == editedUser.editableId">
+							
+								 <button type="button" ng-click="save(editedUser.editableTitle,editedUser.editableCity,editedUser.editablephoneNum)"
+									class="btn btn-success custom-width">Save</button>
+								<button type="button" ng-click="cancelEdit()"
+									class="btn btn-danger custom-width">Cancel</button>
+							</span><span ng-if="u._id != editedUser.editableId">
+								<button type="button" ng-click="edit(u._id)"
+									class="btn btn-success custom-width">Edit</button>
+								<button type="button" ng-click="deleteUser(u._id)"
+									class="btn btn-danger custom-width">Delete</button>
+							</span></td>
 						</tr>
 					</tbody>
 				</table>
@@ -213,7 +312,7 @@ app.factory('CustomerService',  function($http, $q){
                       <div class="row">
                           <div class="form-actions floatRight">
                               <input type="submit"  value="Add" class="btn btn-success custom-width" ng-disabled="myForm.$invalid">
-                              <button type="button" ng-click="add=false" class="btn btn-danger custom-width">Cancel</button>
+                              <button type="button" ng-click="cancel()" class="btn btn-danger custom-width">Cancel</button>
                           </div>
                       </div>
                   </form>

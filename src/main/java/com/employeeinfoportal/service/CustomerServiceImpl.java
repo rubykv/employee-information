@@ -16,8 +16,8 @@ public class CustomerServiceImpl implements CustomerService{
 	EmployeeInfoDAO mongoDao;
 
 	@Override
-	public boolean updateEmployeeInfo(final Employee emp) {
-		return mongoDao.updateEmployeeInfo(emp);
+	public void updateEmployeeInfo(final Employee emp) {
+		 mongoDao.updateEmployeeInfo(emp);
 	}
 
 	@Override
