@@ -153,8 +153,5 @@
               </div>
           </div>
 	</div>
-	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.4/angular.js"></script>
-	
-	
 </body>
 </html>
