@@ -3,11 +3,14 @@ package com.employeeinfoportal.dao;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Repository;
 
+import com.employeeinfoportal.controller.EmployeeInfoController;
 import com.employeeinfoportal.dto.Employee;
+import com.employeeinfoportal.util.DAOException;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientOptions.Builder;
@@ -20,6 +23,8 @@ import com.mongodb.client.result.UpdateResult;
 @Repository
 public class EmployeeInfoDAOImpl implements EmployeeInfoDAO {
 	private static final String _ID = "_id";
+	private static final Logger logger = Logger.getLogger(EmployeeInfoController.class);
+
 
 	@Override
 	public void updateEmployeeInfo(final Employee emp) {
@@ -30,17 +35,16 @@ public class EmployeeInfoDAOImpl implements EmployeeInfoDAO {
 			if (null != emp && emp.get_id() != null) {
 				final ObjectId _id = new ObjectId(emp.get_id());
 				Document createEmployeeDocument = createEmployeeDocument(emp);
-				final UpdateResult updateMany = collection.replaceOne(com.mongodb.client.model.Filters.eq(_ID, _id),createEmployeeDocument);
-				if (null != updateMany && updateMany.getModifiedCount() > 0) {
-					for (Document doc : collection.find()) {
-
-						System.out.println("After update:" + doc.toJson());
-
-					}
+				final UpdateResult updateDoc = collection.replaceOne(com.mongodb.client.model.Filters.eq(_ID, _id),createEmployeeDocument);
+				if (null == updateDoc || updateDoc.getModifiedCount() <= 0) {
+					logger.error("Document not updated");
+					throw new DAOException("Document not updated");
 				}
 			}
+		} catch (final DAOException exception) {
+			logger.error("Exception thrown inside updateEmployeeInfo:MongoDBDAOImpl" + exception);
 		} catch (final Exception exception) {
-			System.out.println("Exception thrown inside updateEmployeeInfo:MongoDBDAOImpl" + exception);
+			logger.error("Exception thrown inside updateEmployeeInfo:MongoDBDAOImpl" + exception);
 		} finally {
 			mongoClient.close();
 		}
@@ -84,7 +88,7 @@ public class EmployeeInfoDAOImpl implements EmployeeInfoDAO {
 		    	allEmployees.add(emp);
 			}
 		} catch(final Exception exception){
-			System.out.println("Exception occured inside EmployeeInfoDAOImpl : retrieveAllEmployeeInfo"+exception);
+			logger.error("Exception occured inside EmployeeInfoDAOImpl : retrieveAllEmployeeInfo"+exception);
 		} finally {
 		    mongoClient.close();
 		}
@@ -104,15 +108,17 @@ public class EmployeeInfoDAOImpl implements EmployeeInfoDAO {
 			if(null != myDoc){
 				deleteOne = collection.deleteOne(com.mongodb.client.model.Filters.eq(_ID, _id));
 			} else {
-				//throw new Exception();
+				throw new DAOException("Document not found to delete");
 			}
 			
 			if(null == deleteOne ||  !(deleteOne.wasAcknowledged())){
-				//throw new exception
+				throw new DAOException("Document not deleted");			
 			}
+		} catch(final DAOException exception){
+			logger.error("Exception occured inside EmployeeInfoDAOImpl : deleteSingleUser"+exception);
 		} catch(final Exception exception){
-			System.out.println("Exception occurred inside deleteSingleUser:EmployeeInfoDAOImpl"+exception);
-		} finally{
+			logger.error("Exception occured inside EmployeeInfoDAOImpl : deleteSingleUser"+exception);
+		}finally{
 			mongoClient.close();
 		}
 	}
@@ -125,7 +131,7 @@ public class EmployeeInfoDAOImpl implements EmployeeInfoDAO {
 		try {
 			collection.insertOne(createEmployeeDocument(emp));
 		} catch (final Exception exception) {
-			System.out.println("Exception occurred inside createNewEmployee:EmployeeInfoDAOImpl" + exception);
+			logger.error("Exception occured inside EmployeeInfoDAOImpl : createNewEmployee"+exception);
 		} finally {
 			mongoClient.close();
 		}
